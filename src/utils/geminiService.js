@@ -1,15 +1,7 @@
-
-const API_KEY = "YOUR_GEMINI_API_KEY";
+const API_KEY = "AIzaSyC7GPy656dtUkg11Ah1I3UaiKa2O-JBOI0";
 
 export const analyzeFoodItem = async (foodName) => {
   try {
-    // For now, we'll use a placeholder until the user adds their API key
-    if (API_KEY === "YOUR_GEMINI_API_KEY") {
-      console.warn("Please add your Gemini API key to use this feature");
-      // Return mock data for demonstration purposes
-      return getMockNutritionData(foodName);
-    }
-
     const prompt = `Provide a comprehensive nutritional analysis for ${foodName}. 
     Include: 
     1. Macronutrients (protein, fat, carbohydrates) with exact amounts per 100g
@@ -48,7 +40,6 @@ export const analyzeFoodItem = async (foodName) => {
     const data = await response.json();
     const result = data.candidates[0].content.parts[0].text;
     
-    // Extract JSON from the response
     const jsonMatch = result.match(/```json\n([\s\S]*?)\n```/) || result.match(/{[\s\S]*?}/);
     const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : result;
     
@@ -64,13 +55,6 @@ export const analyzeFoodItem = async (foodName) => {
 
 export const generateMealPlan = async (preferences) => {
   try {
-    // For now, we'll use a placeholder until the user adds their API key
-    if (API_KEY === "YOUR_GEMINI_API_KEY") {
-      console.warn("Please add your Gemini API key to use this feature");
-      // Return mock data for demonstration purposes
-      return getMockMealPlan(preferences);
-    }
-
     const prompt = `Create a personalized 7-day meal plan based on the following preferences:
     - Dietary restrictions: ${preferences.restrictions || 'None'}
     - Allergies: ${preferences.allergies || 'None'}
@@ -133,7 +117,6 @@ export const generateMealPlan = async (preferences) => {
     const data = await response.json();
     const result = data.candidates[0].content.parts[0].text;
     
-    // Extract JSON from the response
     const jsonMatch = result.match(/```json\n([\s\S]*?)\n```/) || result.match(/{[\s\S]*?}/);
     const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : result;
     
@@ -147,7 +130,6 @@ export const generateMealPlan = async (preferences) => {
   }
 };
 
-// Mock data for demonstration
 const getMockNutritionData = (foodName) => {
   return {
     name: foodName,
