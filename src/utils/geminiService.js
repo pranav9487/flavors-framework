@@ -1,18 +1,21 @@
+
 const API_KEY = "AIzaSyC7GPy656dtUkg11Ah1I3UaiKa2O-JBOI0";
 
 export const analyzeFoodItem = async (foodName) => {
   try {
-    const prompt = `Provide a comprehensive nutritional analysis for ${foodName}. 
+    const formattedFoodName = foodName.trim().toLowerCase();
+    
+    const prompt = `Provide a comprehensive nutritional analysis for ${formattedFoodName}. 
     Include: 
     1. Macronutrients (protein, fat, carbohydrates) with exact amounts per 100g
     2. Micronutrients (vitamins, minerals) with percentages of daily value
     3. Calorie content per 100g
-    4. Health benefits
-    5. Potential allergens or concerns
+    4. Health benefits specifically related to ${formattedFoodName}
+    5. Potential allergens or concerns particular to ${formattedFoodName}
     
     Format as JSON with the following structure:
     {
-      "name": "Food name",
+      "name": "${formattedFoodName}",
       "calories": number,
       "macronutrients": { "protein": number, "fat": number, "carbs": number },
       "micronutrients": [ { "name": "nutrient name", "amount": "amount with unit", "dailyValue": "percentage" } ],
@@ -38,30 +41,57 @@ export const analyzeFoodItem = async (foodName) => {
     });
 
     const data = await response.json();
+    
+    if (!data.candidates || data.candidates.length === 0) {
+      console.error('No response from Gemini API:', data);
+      throw new Error('Failed to get response from Gemini API');
+    }
+    
     const result = data.candidates[0].content.parts[0].text;
     
     const jsonMatch = result.match(/```json\n([\s\S]*?)\n```/) || result.match(/{[\s\S]*?}/);
     const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : result;
     
-    return JSON.parse(jsonString);
+    const parsedData = JSON.parse(jsonString);
+    
+    // Ensure consistent naming with proper capitalization
+    return {
+      ...parsedData,
+      name: formatFoodName(formattedFoodName)
+    };
   } catch (error) {
     console.error('Error analyzing food item:', error);
     return {
       error: true,
-      message: 'Failed to analyze food item. Please try again later.'
+      message: 'Failed to analyze food item. Please try again later.',
+      details: error.message
     };
   }
 };
 
 export const generateMealPlan = async (preferences) => {
   try {
-    const prompt = `Create a personalized 7-day meal plan based on the following preferences:
-    - Dietary restrictions: ${preferences.restrictions || 'None'}
-    - Allergies: ${preferences.allergies || 'None'}
-    - Health conditions: ${preferences.healthConditions || 'None'}
-    - Activity level: ${preferences.activityLevel || 'Moderate'}
-    - Taste preferences: ${preferences.tastePreferences || 'Balanced'}
-    - Calorie target: ${preferences.calorieTarget || 'Standard based on activity level'}
+    // Format preferences for better prompting
+    const formattedPreferences = {
+      restrictions: preferences.restrictions?.trim() || 'None',
+      allergies: preferences.allergies?.trim() || 'None',
+      healthConditions: preferences.healthConditions?.trim() || 'None',
+      activityLevel: preferences.activityLevel?.trim() || 'Moderate',
+      tastePreferences: preferences.tastePreferences?.trim() || 'Balanced',
+      calorieTarget: preferences.calorieTarget?.trim() || 'Standard based on activity level',
+      mealCount: preferences.mealCount || 3
+    };
+
+    const prompt = `Create a personalized 7-day meal plan specifically tailored for someone with these exact preferences:
+    - Dietary restrictions: ${formattedPreferences.restrictions}
+    - Allergies: ${formattedPreferences.allergies}
+    - Health conditions: ${formattedPreferences.healthConditions}
+    - Activity level: ${formattedPreferences.activityLevel}
+    - Taste preferences: ${formattedPreferences.tastePreferences}
+    - Calorie target: ${formattedPreferences.calorieTarget}
+    - Meals per day: ${formattedPreferences.mealCount}
+    
+    The meal plan should be realistic, easy to follow, and directly address their specific restrictions and preferences.
     
     Format as JSON with the following structure:
     {
@@ -75,7 +105,8 @@ export const generateMealPlan = async (preferences) => {
               "calories": number,
               "macros": { "protein": "Xg", "fat": "Xg", "carbs": "Xg" },
               "ingredients": ["ingredient 1", "ingredient 2"],
-              "recipe": "Brief recipe instructions"
+              "recipe": "Brief recipe instructions",
+              "dietaryNotes": "How this meets their specific preferences"
             },
             { "type": "Lunch", ... },
             { "type": "Dinner", ... },
@@ -93,7 +124,8 @@ export const generateMealPlan = async (preferences) => {
       },
       "nutritionSummary": {
         "averageDailyCalories": number,
-        "macroRatio": { "protein": "X%", "fat": "X%", "carbs": "X%" }
+        "macroRatio": { "protein": "X%", "fat": "X%", "carbs": "X%" },
+        "adheresToPreferences": "Explanation of how this plan meets their needs"
       }
     }`;
 
@@ -115,6 +147,12 @@ export const generateMealPlan = async (preferences) => {
     });
 
     const data = await response.json();
+    
+    if (!data.candidates || data.candidates.length === 0) {
+      console.error('No response from Gemini API:', data);
+      throw new Error('Failed to get response from Gemini API');
+    }
+    
     const result = data.candidates[0].content.parts[0].text;
     
     const jsonMatch = result.match(/```json\n([\s\S]*?)\n```/) || result.match(/{[\s\S]*?}/);
@@ -125,11 +163,21 @@ export const generateMealPlan = async (preferences) => {
     console.error('Error generating meal plan:', error);
     return {
       error: true,
-      message: 'Failed to generate meal plan. Please try again later.'
+      message: 'Failed to generate meal plan. Please try again later.',
+      details: error.message
     };
   }
 };
 
+// Helper function to format food names with proper capitalization
+function formatFoodName(name) {
+  return name
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+// Mock data functions kept for fallback purposes
 const getMockNutritionData = (foodName) => {
   return {
     name: foodName,
