@@ -1,73 +1,208 @@
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-export const analyzeFoodItem = async (foodName) => {
+// Debug log to check if API key is loaded
+console.log('API Key loaded:', API_KEY ? 'Yes' : 'No');
+
+export const analyzeFoodItem = async (foodName, imageData = null) => {
   try {
-    // Check if API key is properly configured
-    if (!API_KEY || API_KEY === "your_actual_api_key_here") {
-      console.error("Please configure your Gemini API key in the .env file");
-      throw new Error("API key not configured");
+    // Validate API key
+    if (!API_KEY) {
+      console.error('API Key is missing or undefined');
+      throw new Error("API key is not configured properly");
     }
 
-    const prompt = `Provide a comprehensive nutritional analysis for ${foodName}. 
-    Include: 
-    1. Macronutrients (protein, fat, carbohydrates) with exact amounts per 100g
-    2. Micronutrients (vitamins, minerals) with percentages of daily value
-    3. Calorie content per 100g
-    4. Health benefits
-    5. Potential allergens or concerns
+    console.log('Analyzing food item:', foodName, imageData ? 'with image' : 'text only');
     
-    Format as JSON with the following structure:
-    {
-      "name": "Food name",
-      "calories": number,
-      "macronutrients": { "protein": number, "fat": number, "carbs": number },
-      "micronutrients": [ { "name": "nutrient name", "amount": "amount with unit", "dailyValue": "percentage" } ],
-      "benefits": [ "benefit 1", "benefit 2" ],
-      "concerns": [ "concern 1", "concern 2" ]
-    }`;
+    let endpoint = 'https://generativelanguage.googleapis.com/v1/models/';
+    let requestBody;
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': API_KEY
-      },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+    if (imageData) {
+      // Use Gemini 1.5 Flash model for image analysis
+      endpoint += 'gemini-1.5-flash:generateContent';
+      
+      // Convert base64 image data to proper format
+      const imageBase64 = imageData.split(',')[1];
+      
+      requestBody = {
+        contents: [{
+          parts: [
+            {
+              text: `Analyze this food image and provide nutritional information in the following JSON format:
+              {
+                "name": "identified food name",
+                "calories": number (per 100g),
+                "macronutrients": {
+                  "protein": number (in grams),
+                  "fat": number (in grams),
+                  "carbs": number (in grams)
+                },
+                "micronutrients": [
+                  {
+                    "name": string (nutrient name),
+                    "amount": string (amount with unit),
+                    "dailyValue": string (percentage of daily value)
+                  }
+                ],
+                "benefits": [
+                  string (health benefit)
+                ],
+                "concerns": [
+                  string (potential health concern or allergen)
+                ]
+              }
+              
+              Important: 
+              1. First identify the food in the image
+              2. Ensure all numbers are realistic and based on scientific nutritional data
+              3. Include at least 5 key micronutrients
+              4. List 3-5 evidence-based health benefits
+              5. Include any relevant allergens or health concerns
+              6. Keep the response strictly in JSON format`
+            },
+            {
+              inlineData: {
+                mimeType: "image/jpeg",
+                data: imageBase64
+              }
+            }
+          ]
+        }],
         generationConfig: {
           temperature: 0.2,
           topK: 40,
           topP: 0.95,
           maxOutputTokens: 1024,
         }
-      })
+      };
+    } else {
+      // Use Gemini 1.5 Flash model for text analysis
+      endpoint += 'gemini-1.5-flash:generateContent';
+      
+      requestBody = {
+        contents: [{
+          parts: [{
+            text: `Analyze the nutritional content of ${foodName} and provide detailed information.
+            Return the response in the following JSON format:
+            {
+              "name": "${foodName}",
+              "calories": number (per 100g),
+              "macronutrients": {
+                "protein": number (in grams),
+                "fat": number (in grams),
+                "carbs": number (in grams)
+              },
+              "micronutrients": [
+                {
+                  "name": string (nutrient name),
+                  "amount": string (amount with unit),
+                  "dailyValue": string (percentage of daily value)
+                }
+              ],
+              "benefits": [
+                string (health benefit)
+              ],
+              "concerns": [
+                string (potential health concern or allergen)
+              ]
+            }
+            
+            Important: 
+            1. Ensure all numbers are realistic and based on scientific nutritional data
+            2. Include at least 5 key micronutrients
+            3. List 3-5 evidence-based health benefits
+            4. Include any relevant allergens or health concerns
+            5. Keep the response strictly in JSON format`
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.2,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        }
+      };
+    }
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': API_KEY
+      },
+      body: JSON.stringify(requestBody)
     });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('API Error:', errorData);
+      throw new Error(errorData.error?.message || 'Failed to fetch data from Gemini API');
+    }
+
     const data = await response.json();
+    console.log('API Response:', data);
+    
+    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      throw new Error('Invalid response format from Gemini API');
+    }
+
     const result = data.candidates[0].content.parts[0].text;
+    console.log('Raw API result:', result);
     
     // Extract JSON from the response
-    const jsonMatch = result.match(/```json\n([\s\S]*?)\n```/) || result.match(/{[\s\S]*?}/);
-    const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : result;
-    
-    return JSON.parse(jsonString);
+    let jsonData;
+    try {
+      // First, try to parse the entire response as JSON
+      jsonData = JSON.parse(result);
+    } catch (e) {
+      console.error('First parse attempt failed:', e);
+      try {
+        // If that fails, try to extract JSON from markdown code blocks or plain text
+        const jsonMatch = result.match(/```json\n([\s\S]*?)\n```/) || result.match(/{[\s\S]*?}/);
+        if (!jsonMatch) {
+          console.error('No JSON pattern found in response');
+          throw new Error('Could not extract valid JSON from the response');
+        }
+        const jsonString = jsonMatch[1] || jsonMatch[0];
+        // Clean up any potential comments or ellipsis
+        const cleanJsonString = jsonString
+          .replace(/\/\/.*/g, '') // Remove single-line comments
+          .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
+          .replace(/\.\.\./g, '') // Remove ellipsis
+          .replace(/,(\s*[}\]])/g, '$1'); // Remove trailing commas
+        
+        console.log('Cleaned JSON string:', cleanJsonString);
+        jsonData = JSON.parse(cleanJsonString);
+      } catch (parseError) {
+        console.error('JSON parsing error:', parseError);
+        throw new Error('Failed to parse the nutrition data. Please try again.');
+      }
+    }
+
+    // Validate the required fields
+    if (!jsonData.name || !jsonData.calories || !jsonData.macronutrients) {
+      console.error('Missing required fields in response:', jsonData);
+      throw new Error('Missing required fields in the response');
+    }
+
+    return jsonData;
   } catch (error) {
     console.error('Error analyzing food item:', error);
     return {
       error: true,
-      message: 'Failed to analyze food item. Please try again later.'
+      message: error.message || 'Failed to analyze food item. Please try again later.'
     };
   }
 };
 
 export const generateMealPlan = async (preferences) => {
   try {
-    // For now, we'll use a placeholder until the user adds their API key
-    if (API_KEY === "AIzaSyAtDDQ1mpvu0z5U82Ri07fwjkl-Re_vP8g") {
-      console.warn("Please add your Gemini API key to use this feature");
-      // Return mock data for demonstration purposes
-      return getMockMealPlan(preferences);
+    // Validate API key
+    if (!API_KEY) {
+      console.error('API Key is missing or undefined');
+      throw new Error("API key is not configured properly");
     }
+
+    console.log('Generating meal plan with preferences:', preferences);
 
     const prompt = `Create a personalized 7-day meal plan based on the following preferences:
     - Dietary restrictions: ${preferences.restrictions || 'None'}
@@ -77,41 +212,90 @@ export const generateMealPlan = async (preferences) => {
     - Taste preferences: ${preferences.tastePreferences || 'Balanced'}
     - Calorie target: ${preferences.calorieTarget || 'Standard based on activity level'}
     
-    Format as JSON with the following structure:
+    Return a complete 7-day meal plan in the following JSON format. Do not use any comments, ellipsis, or placeholders:
     {
       "weekPlan": [
         {
           "day": "Monday",
           "meals": [
-            { 
-              "type": "Breakfast", 
-              "name": "Meal name", 
+            {
+              "type": "Breakfast",
+              "name": "string",
               "calories": number,
-              "macros": { "protein": "Xg", "fat": "Xg", "carbs": "Xg" },
-              "ingredients": ["ingredient 1", "ingredient 2"],
-              "recipe": "Brief recipe instructions"
+              "macros": {
+                "protein": "number in grams",
+                "fat": "number in grams",
+                "carbs": "number in grams"
+              },
+              "ingredients": ["ingredient1", "ingredient2"],
+              "recipe": "string"
             },
-            { "type": "Lunch", ... },
-            { "type": "Dinner", ... },
-            { "type": "Snack", ... }
+            {
+              "type": "Lunch",
+              "name": "string",
+              "calories": number,
+              "macros": {
+                "protein": "number in grams",
+                "fat": "number in grams",
+                "carbs": "number in grams"
+              },
+              "ingredients": ["ingredient1", "ingredient2"],
+              "recipe": "string"
+            },
+            {
+              "type": "Dinner",
+              "name": "string",
+              "calories": number,
+              "macros": {
+                "protein": "number in grams",
+                "fat": "number in grams",
+                "carbs": "number in grams"
+              },
+              "ingredients": ["ingredient1", "ingredient2"],
+              "recipe": "string"
+            },
+            {
+              "type": "Snack",
+              "name": "string",
+              "calories": number,
+              "macros": {
+                "protein": "number in grams",
+                "fat": "number in grams",
+                "carbs": "number in grams"
+              },
+              "ingredients": ["ingredient1", "ingredient2"],
+              "recipe": "string"
+            }
           ]
-        },
-        ... (for each day of the week)
+        }
       ],
       "groceryList": {
-        "produce": ["item 1", "item 2"],
-        "protein": ["item 1", "item 2"],
-        "dairy": ["item 1", "item 2"],
-        "grains": ["item 1", "item 2"],
-        "other": ["item 1", "item 2"]
+        "produce": ["item1", "item2"],
+        "protein": ["item1", "item2"],
+        "dairy": ["item1", "item2"],
+        "grains": ["item1", "item2"],
+        "other": ["item1", "item2"]
       },
       "nutritionSummary": {
         "averageDailyCalories": number,
-        "macroRatio": { "protein": "X%", "fat": "X%", "carbs": "X%" }
+        "macroRatio": {
+          "protein": "percentage",
+          "fat": "percentage",
+          "carbs": "percentage"
+        }
       }
-    }`;
+    }
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent', {
+    Important:
+    1. Provide realistic portion sizes and calories
+    2. Include detailed ingredients lists
+    3. Keep recipes simple and concise
+    4. Ensure all meals align with dietary restrictions
+    5. Return ONLY valid JSON without any comments or placeholders
+    6. Include all 7 days in the weekPlan array
+    7. Make sure all numbers are realistic`;
+
+    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -128,19 +312,63 @@ export const generateMealPlan = async (preferences) => {
       })
     });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('API Error:', errorData);
+      throw new Error(errorData.error?.message || 'Failed to fetch data from Gemini API');
+    }
+
     const data = await response.json();
+    console.log('API Response:', data);
+    
+    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      throw new Error('Invalid response format from Gemini API');
+    }
+
     const result = data.candidates[0].content.parts[0].text;
+    console.log('Raw API result:', result);
     
     // Extract JSON from the response
-    const jsonMatch = result.match(/```json\n([\s\S]*?)\n```/) || result.match(/{[\s\S]*?}/);
-    const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : result;
-    
-    return JSON.parse(jsonString);
+    let jsonData;
+    try {
+      // First, try to parse the entire response as JSON
+      jsonData = JSON.parse(result);
+    } catch (e) {
+      console.error('First parse attempt failed:', e);
+      try {
+        // If that fails, try to extract JSON from markdown code blocks or plain text
+        const jsonMatch = result.match(/```json\n([\s\S]*?)\n```/) || result.match(/{[\s\S]*?}/);
+        if (!jsonMatch) {
+          console.error('No JSON pattern found in response');
+          throw new Error('Could not extract valid JSON from the response');
+        }
+        const jsonString = jsonMatch[1] || jsonMatch[0];
+        // Clean up any potential comments or ellipsis
+        const cleanJsonString = jsonString
+          .replace(/\/\/.*/g, '') // Remove single-line comments
+          .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
+          .replace(/\.\.\./g, '') // Remove ellipsis
+          .replace(/,(\s*[}\]])/g, '$1'); // Remove trailing commas
+        
+        console.log('Cleaned JSON string:', cleanJsonString);
+        jsonData = JSON.parse(cleanJsonString);
+      } catch (parseError) {
+        console.error('JSON parsing error:', parseError);
+        throw new Error('Failed to parse the meal plan data. Please try again.');
+      }
+    }
+
+    // Validate the required fields
+    if (!jsonData.weekPlan || !Array.isArray(jsonData.weekPlan) || !jsonData.groceryList || !jsonData.nutritionSummary) {
+      throw new Error('Missing required fields in the meal plan data');
+    }
+
+    return jsonData;
   } catch (error) {
     console.error('Error generating meal plan:', error);
     return {
       error: true,
-      message: 'Failed to generate meal plan. Please try again later.'
+      message: error.message || 'Failed to generate meal plan. Please try again later.'
     };
   }
 };

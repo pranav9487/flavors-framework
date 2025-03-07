@@ -49,10 +49,15 @@ const FoodAnalysis = () => {
     toast.info('Analyzing your food...', { duration: 2000 });
 
     try {
-      // For now, we'll just use the text-based analysis
-      // In a real app, we would handle image analysis differently
-      const searchTerm = activeTab === 'text' ? foodName : imageFile.name.replace(/\.[^/.]+$/, "");
-      const data = await analyzeFoodItem(searchTerm);
+      let searchTerm = foodName;
+      let imageData = null;
+
+      if (activeTab === 'image') {
+        searchTerm = imageFile.name.replace(/\.[^/.]+$/, "");
+        imageData = imagePreview; // This contains the base64 image data
+      }
+
+      const data = await analyzeFoodItem(searchTerm, imageData);
       
       if (data.error) {
         toast.error(data.message);
