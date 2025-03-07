@@ -1,13 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Menu, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '../contexts/AuthContext';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,6 +25,7 @@ const Header = () => {
     { name: 'Home', path: '/' },
     { name: 'Food Analysis', path: '/analysis' },
     { name: 'Meal Planning', path: '/meal-plan' },
+    { name: 'History', path: '/history' },
   ];
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
@@ -60,6 +63,25 @@ const Header = () => {
               {item.name}
             </Link>
           ))}
+          {user ? (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => signOut()}
+              className="ml-4"
+            >
+              Sign Out
+            </Button>
+          ) : (
+            <>
+              <Button asChild variant="outline" size="sm" className="ml-4">
+                <Link to="/login">Sign In</Link>
+              </Button>
+              <Button asChild size="sm" className="ml-2">
+                <Link to="/login?signup=true">Sign Up</Link>
+              </Button>
+            </>
+          )}
         </nav>
 
         {/* Mobile menu button */}
@@ -92,6 +114,28 @@ const Header = () => {
                 {item.name}
               </Link>
             ))}
+            {user ? (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  signOut();
+                  closeMobileMenu();
+                }}
+                className="mt-4"
+              >
+                Sign Out
+              </Button>
+            ) : (
+              <div className="flex flex-col gap-4 mt-4">
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/login" onClick={closeMobileMenu}>Sign In</Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link to="/login?signup=true" onClick={closeMobileMenu}>Sign Up</Link>
+                </Button>
+              </div>
+            )}
           </nav>
         </div>
       )}

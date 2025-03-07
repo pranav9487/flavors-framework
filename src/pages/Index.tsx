@@ -1,10 +1,8 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import Header from '@/components/Header';
 import { ArrowRight, Search, Calendar, Sparkles } from 'lucide-react';
 
 const Index = () => {
@@ -14,8 +12,6 @@ const Index = () => {
         <title>NutriPlan - Smart Nutrition & Meal Planning</title>
       </Helmet>
       <div className="min-h-screen bg-gradient-to-b from-white to-blue-50">
-        <Header />
-        
         <main className="pt-32 pb-20">
           {/* Hero Section */}
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
