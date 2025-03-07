@@ -1,13 +1,11 @@
-
-const API_KEY = "YOUR_GEMINI_API_KEY";
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 export const analyzeFoodItem = async (foodName) => {
   try {
-    // For now, we'll use a placeholder until the user adds their API key
-    if (API_KEY === "YOUR_GEMINI_API_KEY") {
-      console.warn("Please add your Gemini API key to use this feature");
-      // Return mock data for demonstration purposes
-      return getMockNutritionData(foodName);
+    // Check if API key is properly configured
+    if (!API_KEY || API_KEY === "your_actual_api_key_here") {
+      console.error("Please configure your Gemini API key in the .env file");
+      throw new Error("API key not configured");
     }
 
     const prompt = `Provide a comprehensive nutritional analysis for ${foodName}. 
@@ -65,7 +63,7 @@ export const analyzeFoodItem = async (foodName) => {
 export const generateMealPlan = async (preferences) => {
   try {
     // For now, we'll use a placeholder until the user adds their API key
-    if (API_KEY === "YOUR_GEMINI_API_KEY") {
+    if (API_KEY === "AIzaSyAtDDQ1mpvu0z5U82Ri07fwjkl-Re_vP8g") {
       console.warn("Please add your Gemini API key to use this feature");
       // Return mock data for demonstration purposes
       return getMockMealPlan(preferences);

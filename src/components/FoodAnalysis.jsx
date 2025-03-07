@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +17,9 @@ const FoodAnalysis = () => {
   const [nutritionData, setNutritionData] = useState(null);
 
   const handleFoodNameChange = (e) => {
+    console.log(foodName);
     setFoodName(e.target.value);
+    
   };
 
   const handleImageUpload = (e) => {
@@ -61,7 +62,11 @@ const FoodAnalysis = () => {
       }
     } catch (error) {
       console.error('Analysis error:', error);
-      toast.error('Failed to analyze food. Please try again.');
+      if (error.message === 'API key not configured') {
+        toast.error('Please configure your Gemini API key in the .env file');
+      } else {
+        toast.error('Failed to analyze food. Please try again.');
+      }
     } finally {
       setIsAnalyzing(false);
     }
