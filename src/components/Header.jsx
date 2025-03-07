@@ -40,11 +40,13 @@ const Header = () => {
       )}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
+
         <Link 
           to="/" 
           className="text-xl font-display font-medium tracking-tight text-primary transition-colors hover:text-primary/80"
         >
-          NutriPlan
+          
+        NutriPlan
         </Link>
 
         {/* Desktop Navigation */}

@@ -95,17 +95,22 @@ const FoodAnalysis = () => {
   );
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="relative w-full max-w-4xl mx-auto bg-gradient-to-b from-blue-100 to-white p-6 rounded-lg shadow-lg overflow-hidden">
+      {/* SVG Background Shapes */}
+      <svg className="absolute top-0 left-0 w-full h-full opacity-20" viewBox="0 0 1440 320">
+        <path fill="#4ade80" d="M0,128L30,144C60,160,120,192,180,202.7C240,213,300,203,360,186.7C420,171,480,149,540,144C600,139,660,149,720,160C780,171,840,181,900,186.7C960,192,1020,192,1080,186.7C1140,181,1200,171,1260,160C1320,149,1380,139,1410,134.7L1440,128L1440,320L1410,320C1380,320,1320,320,1260,320C1200,320,1140,320,1080,320C1020,320,960,320,900,320C840,320,780,320,720,320C660,320,600,320,540,320C480,320,420,320,360,320C300,320,240,320,180,320C120,320,60,320,30,320H0Z"></path>
+      </svg>
+
       {!nutritionData ? (
         <div className="space-y-6 animate-fade-up">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-medium mb-2">Food Nutrition Analysis</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-4xl font-bold mb-2 text-primary">Food Nutrition Analysis</h2>
+            <p className="text-muted-foreground text-lg">
               Get detailed nutritional information by entering a food name or uploading an image
             </p>
           </div>
 
-          <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-slate-100">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-md border border-slate-200">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid grid-cols-2 mb-6">
                 <TabsTrigger value="text" className="flex items-center gap-2">
@@ -125,7 +130,7 @@ const FoodAnalysis = () => {
                     placeholder="Enter food name (e.g., Apple, Chicken Breast)"
                     value={foodName}
                     onChange={handleFoodNameChange}
-                    className="text-lg py-6"
+                    className="text-lg py-4 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </TabsContent>
@@ -137,7 +142,7 @@ const FoodAnalysis = () => {
                       <img 
                         src={imagePreview} 
                         alt="Food preview" 
-                        className="max-h-64 rounded-md mx-auto object-contain" 
+                        className="max-h-64 rounded-md mx-auto object-contain shadow-lg" 
                       />
                       <Button 
                         variant="outline" 
@@ -167,6 +172,7 @@ const FoodAnalysis = () => {
                       <Button 
                         variant="outline" 
                         onClick={() => document.getElementById('image-upload').click()}
+                        className="transition-all duration-300 hover:bg-primary hover:text-white"
                       >
                         Select Image
                       </Button>
@@ -180,7 +186,7 @@ const FoodAnalysis = () => {
 
               <div className="mt-6">
                 <Button 
-                  className="w-full py-6 text-lg font-medium"
+                  className="w-full py-4 text-lg font-medium bg-primary text-white rounded-lg shadow-md transition-all duration-300 hover:bg-primary-dark"
                   onClick={handleAnalyze}
                   disabled={isAnalyzing}
                 >
@@ -204,7 +210,7 @@ const FoodAnalysis = () => {
               title="Nutrition Overview" 
               icon={<Utensils className="h-5 w-5 text-primary" />}
             >
-              <div className="bg-slate-50 rounded-lg p-4">
+              <div className="bg-slate-50 rounded-lg p-4 shadow-md">
                 <div className="text-2xl font-medium text-center mb-2">
                   {nutritionData.calories} kcal
                   <div className="text-sm text-muted-foreground">per 100g</div>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -92,7 +91,14 @@ const MealPlanner = () => {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="relative w-full max-w-4xl mx-auto bg-gradient-to-b from-green-200 to-white overflow-hidden">
+      {/* Background Shapes */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-10 left-10 w-48 h-48 bg-green-400/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-20 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-40 right-10 w-32 h-32 bg-red-400/20 rounded-full blur-3xl"></div>
+      </div>
+
       {!mealPlan ? (
         <div className="space-y-6 animate-fade-up">
           <div className="text-center mb-8">
