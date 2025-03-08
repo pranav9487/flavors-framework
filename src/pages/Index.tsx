@@ -219,6 +219,9 @@ const Index = () => {
                     </Link>
                   </Button>
                   <Button asChild variant="outline" size="lg" className="h-14 px-8 text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg">
+                    <Link to="/budget-meal">Budget Meal</Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg" className="h-14 px-8 text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg">
                     <Link to="/meal-plan">Create Meal Plan</Link>
                   </Button>
                 </div>
@@ -389,6 +392,11 @@ const Index = () => {
                   <Button asChild size="lg" className="text-md transition-all duration-300 hover:scale-105 hover:shadow-lg">
                     <Link to="/analysis">
                       Analyze Food
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg" className="text-md transition-all duration-300 hover:scale-105 hover:shadow-lg">
+                    <Link to="/budget-meal">
+                      Budget Meal
                     </Link>
                   </Button>
                   <Button asChild variant="outline" size="lg" className="bg-white/80 backdrop-blur-sm text-md transition-all duration-300 hover:scale-105 hover:shadow-lg">

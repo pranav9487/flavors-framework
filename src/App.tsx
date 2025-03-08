@@ -8,6 +8,7 @@ import Header from "./components/Header";
 import Index from "./pages/Index";
 import Analysis from "./pages/Analysis";
 import MealPlan from "./pages/MealPlan";
+import BudgetMeal from "./pages/BudgetMeal";
 import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -27,6 +28,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<Index />} />
               <Route path="/analysis" element={<Analysis />} />
+              <Route path="/budget-meal" element={<BudgetMeal />} />
               <Route path="/meal-plan" element={<MealPlan />} />
               <Route path="/history" element={<History />} />
               <Route path="*" element={<NotFound />} />
